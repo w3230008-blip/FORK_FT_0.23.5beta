@@ -1,5 +1,19 @@
 # FreeTube-0.23.5-marek7400v3
 
+## Investigation Documentation Available
+
+📚 **Comprehensive documentation of the "Show Adjusted Time" feature is now available!**
+
+Start here: [INDEX.md](INDEX.md) - Complete navigation guide to all documentation
+
+Quick links:
+- [INVESTIGATION_SUMMARY.md](INVESTIGATION_SUMMARY.md) - Executive overview
+- [PLAYBACK_SPEED_TIME_ADJUSTMENT_DOCUMENTATION.md](PLAYBACK_SPEED_TIME_ADJUSTMENT_DOCUMENTATION.md) - Full technical docs
+- [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Quick lookup guide
+- [FEATURE_ARCHITECTURE_DIAGRAM.md](FEATURE_ARCHITECTURE_DIAGRAM.md) - Visual architecture
+
+---
+
 ## This is fork FreeTube-0.23.5 beta with MY Progress Bar
 
 02.09.2025 Stop working (Youtube changed the algorithm again)!!!
