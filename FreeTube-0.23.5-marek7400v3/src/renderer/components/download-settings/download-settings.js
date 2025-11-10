@@ -8,6 +8,30 @@ import FtInput from '../ft-input/ft-input.vue'
 import { mapActions } from 'vuex'
 import { IpcChannels } from '../../../constants'
 
+const getRuntimeGlobal = () => {
+  if (typeof globalThis !== 'undefined') {
+    return globalThis
+  }
+
+  if (typeof window !== 'undefined') {
+    return window
+  }
+
+  if (typeof global !== 'undefined') {
+    return global
+  }
+
+  return {}
+}
+
+const runtimeGlobal = getRuntimeGlobal()
+
+const isElectronRuntime = Boolean(
+  runtimeGlobal.process?.type === 'renderer' ||
+  runtimeGlobal.process?.versions?.electron ||
+  runtimeGlobal.process?.env?.IS_ELECTRON
+)
+
 export default defineComponent({
   name: 'DownloadSettings',
   components: {
@@ -23,14 +47,15 @@ export default defineComponent({
       downloadBehaviorValues: [
         'download',
         'open'
-      ]
+      ],
+      isElectron: isElectronRuntime
     }
   },
   computed: {
-    downloadPath: function() {
+    downloadPath: function () {
       return this.$store.getters.getDownloadFolderPath
     },
-    askForDownloadPath: function() {
+    askForDownloadPath: function () {
       return this.$store.getters.getDownloadAskPath
     },
     downloadBehaviorNames: function () {
@@ -41,31 +66,98 @@ export default defineComponent({
     },
     downloadBehavior: function () {
       return this.$store.getters.getDownloadBehavior
+    },
+    shouldShowDownloadOptions: function () {
+      return this.downloadBehavior === 'download'
+    },
+    shouldShowYtDlpOptions: function () {
+      return this.shouldShowDownloadOptions && this.isElectron
+    },
+    ytDlpBinaryPath: function () {
+      return this.$store.getters.getYtDlpBinaryPath
+    },
+    ytDlpUseCustomArgs: function () {
+      return this.$store.getters.getYtDlpUseCustomArgs
+    },
+    ytDlpCustomArgs: function () {
+      return this.$store.getters.getYtDlpCustomArgs
     }
   },
   methods: {
     handleDownloadingSettingChange: function (value) {
       this.updateDownloadAskPath(value)
     },
-    chooseDownloadingFolder: async function () {
-      if (process.env.IS_ELECTRON) {
-        const { ipcRenderer } = require('electron')
+    handleYtDlpUseCustomArgsChange: function (value) {
+      this.updateYtDlpUseCustomArgs(value)
 
-        const folder = await ipcRenderer.invoke(
-          IpcChannels.SHOW_OPEN_DIALOG,
-          { properties: ['openDirectory'] }
-        )
-
-        if (folder.canceled) return
-
-        this.updateDownloadFolderPath(folder.filePaths[0])
+      if (!value) {
+        this.updateYtDlpCustomArgs('')
       }
+    },
+    handleBinaryPathInput: function (value) {
+      this.updateYtDlpBinaryPath(value)
+    },
+    handleBinaryPathClear: function () {
+      this.updateYtDlpBinaryPath('')
+    },
+    handleCustomArgsInput: function (value) {
+      this.updateYtDlpCustomArgs(value)
+    },
+    handleCustomArgsClear: function () {
+      this.updateYtDlpCustomArgs('')
+    },
+    chooseDownloadingFolder: async function () {
+      if (!this.isElectron) {
+        return
+      }
+
+      const { ipcRenderer } = require('electron')
+      const dialogResult = await ipcRenderer.invoke(
+        IpcChannels.SHOW_OPEN_DIALOG,
+        { properties: ['openDirectory'] }
+      )
+
+      if (dialogResult?.canceled) {
+        return
+      }
+
+      const selectedPath = dialogResult?.filePaths?.[0]
+      if (selectedPath) {
+        this.updateDownloadFolderPath(selectedPath)
+      }
+    },
+    chooseYtDlpBinaryPath: async function () {
+      if (!this.isElectron) {
+        return
+      }
+
+      const { ipcRenderer } = require('electron')
+      const dialogResult = await ipcRenderer.invoke(
+        IpcChannels.SHOW_OPEN_DIALOG,
+        {
+          properties: ['openFile']
+        }
+      )
+
+      if (dialogResult?.canceled) {
+        return
+      }
+
+      const selectedPath = dialogResult?.filePaths?.[0]
+      if (selectedPath) {
+        this.updateYtDlpBinaryPath(selectedPath)
+      }
+    },
+    resetYtDlpBinaryPath: function () {
+      this.updateYtDlpBinaryPath('')
     },
     ...mapActions([
       'updateDownloadAskPath',
       'updateDownloadFolderPath',
-      'updateDownloadBehavior'
+      'updateDownloadBehavior',
+      'updateYtDlpBinaryPath',
+      'updateYtDlpUseCustomArgs',
+      'updateYtDlpCustomArgs'
     ])
   }
-
 })

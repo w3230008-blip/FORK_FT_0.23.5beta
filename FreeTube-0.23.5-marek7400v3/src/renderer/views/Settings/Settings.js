@@ -206,7 +206,7 @@ export default defineComponent({
       // mark first section as active before any scrolling has taken place
       if (this.settingsSectionComponents.length > 0) {
         const firstSection = document.getElementById(this.settingsSectionComponents[0].type)
-        firstSection.classList.add(ACTIVE_CLASS_NAME)
+        firstSection?.classList.add(ACTIVE_CLASS_NAME)
       }
     },
 
@@ -221,13 +221,28 @@ export default defineComponent({
     navigateToSection: function(sectionType) {
       if (this.isInDesktopView) {
         nextTick(() => {
-          const sectionElement = this.$refs[sectionType][0].$el
-          sectionElement.scrollIntoView()
+          const sectionRefs = this.$refs[sectionType]
+          const sectionComponent = Array.isArray(sectionRefs) ? sectionRefs[0] : sectionRefs
+          const sectionElement = sectionComponent?.$el ?? sectionComponent
 
-          const sectionHeading = sectionElement.firstChild.firstChild
-          sectionHeading.tabIndex = 0
-          sectionHeading.focus()
-          sectionHeading.tabIndex = -1
+          if (!sectionElement || typeof sectionElement.scrollIntoView !== 'function') {
+            return
+          }
+
+          try {
+            sectionElement.scrollIntoView({ block: 'start', behavior: 'smooth' })
+          } catch (err) {
+            sectionElement.scrollIntoView()
+          }
+
+          const sectionHeaderContainer = sectionElement.firstElementChild
+          const sectionHeading = sectionHeaderContainer?.firstElementChild
+
+          if (sectionHeading) {
+            sectionHeading.tabIndex = 0
+            sectionHeading.focus()
+            sectionHeading.tabIndex = -1
+          }
         })
       } else {
         this.settingsSectionTypeOpenInMobile = sectionType
@@ -247,10 +262,17 @@ export default defineComponent({
     markScrolledToSectionAsActive: function() {
       const scrollY = window.scrollY + innerHeight / 4
       this.settingsSectionComponents.forEach((section) => {
-        const sectionElement = this.$refs[section.type][0].$el
-        const sectionHeight = sectionElement.offsetHeight
-        const sectionTop = sectionElement.offsetTop
+        const sectionRefs = this.$refs[section.type]
+        const sectionComponent = Array.isArray(sectionRefs) ? sectionRefs[0] : sectionRefs
+        const sectionElement = sectionComponent?.$el ?? sectionComponent
         const correspondingMenuLink = document.getElementById(section.type)
+
+        if (!sectionElement || !correspondingMenuLink) {
+          return
+        }
+
+        const sectionHeight = sectionElement.offsetHeight ?? 0
+        const sectionTop = sectionElement.offsetTop ?? 0
 
         if (this.isInDesktopView && scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
           correspondingMenuLink.classList.add(ACTIVE_CLASS_NAME)

@@ -12,6 +12,7 @@ import searchHistory from './search-history'
 import subscriptionCache from './subscription-cache'
 import utils from './utils'
 import player from './player'
+import ytDlp from './yt-dlp'
 
 export default {
   history,
@@ -23,4 +24,5 @@ export default {
   subscriptionCache,
   utils,
   player,
+  ytDlp,
 }

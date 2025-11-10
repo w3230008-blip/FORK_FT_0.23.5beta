@@ -674,6 +674,13 @@ Settings:
     Download Behavior: Download Behavior
     Download in app: Download in app
     Open in web browser: Open in web browser
+    YtDlp Binary Path: yt-dlp Binary Path
+    YtDlp Binary Path Placeholder: Path to yt-dlp executable
+    Browse For YtDlp: Browse for yt-dlp
+    Reset YtDlp Binary Path: Reset yt-dlp path
+    Use Custom YtDlp Arguments: Use custom yt-dlp arguments
+    Custom YtDlp Arguments: Custom yt-dlp arguments
+    Custom YtDlp Arguments Placeholder: Arguments appended to the yt-dlp command
   Experimental Settings:
     Experimental Settings: Experimental
     Warning: These settings are experimental, they may cause crashes while enabled. Making backups is highly recommended. Use at your own risk!

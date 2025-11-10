@@ -1,3 +1,16 @@
-.folderDisplay {
-  inline-size: 50vh;
+.downloadSettingsRow {
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.downloadSettingsButtonRow {
+  justify-content: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.folderDisplay,
+.binaryPathInput,
+.customArgsInput {
+  inline-size: min(50rem, 100%);
 }
