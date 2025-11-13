@@ -4,7 +4,7 @@ import {
   nativeTheme, net, protocol, clipboard
 } from 'electron'
 import path from 'path'
-import cp from 'child_process'
+import cp, { exec } from 'child_process'
 
 import {
   IpcChannels,
@@ -1052,6 +1052,129 @@ function runApp() {
       // throw a new error so that we don't expose the real error to the renderer
       throw new Error('Failed to save')
     }
+  })
+
+  ipcMain.handle(IpcChannels.DOWNLOAD_VIDEO_WITH_YTDLP, async (event, { url, title, outputPath, formatId }) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      throw new Error('Unauthorized')
+    }
+
+    return new Promise((resolve, reject) => {
+      console.warn('[Download-Diagnostic-1] Start yt-dlp process', { url, title, outputPath, formatId })
+
+      // Check if yt-dlp is available
+      exec('yt-dlp --version', (error) => {
+        if (error) {
+          console.error('[Download-Diagnostic-Error] yt-dlp not found:', error)
+          reject(new Error('yt-dlp is not installed or not available in PATH'))
+          return
+        }
+
+        // Determine if this is an audio+video format that needs ffmpeg post-processing
+        const needsAudioVideo = formatId && (formatId.includes('+') || formatId.includes('best'))
+
+        const ytdlpArgs = [
+          '--no-warnings',
+          '--no-part',
+          '--restrict-filenames',
+          '--embed-metadata',
+          url,
+          '-o', outputPath
+        ]
+
+        if (formatId) {
+          ytdlpArgs.unshift('-f', formatId)
+        }
+
+        if (needsAudioVideo) {
+          console.warn('[Download-Diagnostic-3] Start ffmpeg (audio+video format detected)')
+          ytdlpArgs.push('--merge-output-format', 'mp4', '--embed-chapters', '--keep-video') // Keep original files for debugging
+        }
+
+        // Use detached: true to prevent blocking the main event loop
+        const ytDlpProcess = cp.spawn('yt-dlp', ytdlpArgs, {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          detached: false // Keep false so we can monitor the process
+        })
+
+        let stderr = ''
+        let ffmpegStarted = false
+
+        // Use setImmediate to ensure non-blocking operation
+        setImmediate(() => {
+          ytDlpProcess.stdout.on('data', (data) => {
+            const output = data.toString()
+
+            // Check for ffmpeg activity
+            if (output.includes('ffmpeg') || output.includes('Merging formats')) {
+              if (!ffmpegStarted) {
+                ffmpegStarted = true
+                console.warn('[Download-Diagnostic-3] Start ffmpeg (post-processing started)')
+              }
+            }
+          })
+        })
+
+        setImmediate(() => {
+          ytDlpProcess.stderr.on('data', (data) => {
+            const output = data.toString()
+            stderr += output
+
+            // Check for ffmpeg completion
+            if (output.includes('Deleting original file') || output.includes('Deleting temp files')) {
+              console.warn('[Download-Diagnostic-4] ffmpeg finished')
+            }
+          })
+        })
+
+        setImmediate(() => {
+          ytDlpProcess.on('error', (error) => {
+            console.error('[Download-Diagnostic-Error] yt-dlp process error:', error)
+            reject(error)
+          })
+        })
+
+        setImmediate(() => {
+          ytDlpProcess.on('close', async (code) => {
+            console.warn('[Download-Diagnostic-2] yt-dlp finished', { code, outputPath })
+
+            if (code === 0) {
+              console.warn('[Download-Diagnostic-5] File move/rename finished (final file ready)')
+              console.warn('[Download-Diagnostic-6] IPC listener removal - success')
+              resolve({ success: true, outputPath })
+            } else {
+              console.error('[Download-Diagnostic-Error] yt-dlp failed', { code, stderr })
+              reject(new Error(`yt-dlp exited with code ${code}: ${stderr}`))
+            }
+          })
+        })
+
+        // Send progress updates back to renderer
+        setImmediate(() => {
+          ytDlpProcess.stdout.on('data', (data) => {
+            const output = data.toString()
+            const progressMatch = output.match(/\[download]\s+(\d+\.\d+)%/)
+            if (progressMatch) {
+              const progress = parseFloat(progressMatch[1])
+              event.sender.send('download-progress', { progress })
+            }
+          })
+        })
+
+        // Handle cleanup if window is closed
+        const cleanup = () => {
+          console.warn('[Download-Diagnostic-Cleanup] Cleaning up yt-dlp process')
+          if (!ytDlpProcess.killed) {
+            ytDlpProcess.kill()
+          }
+        }
+
+        setImmediate(() => {
+          event.sender.once('destroyed', cleanup)
+          ipcMain.once('download-cancel', cleanup)
+        })
+      })
+    })
   })
 
   ipcMain.on(IpcChannels.STOP_POWER_SAVE_BLOCKER, (_, id) => {

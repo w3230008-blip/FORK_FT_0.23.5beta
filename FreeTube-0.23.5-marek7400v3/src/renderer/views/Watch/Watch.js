@@ -714,7 +714,11 @@ export default defineComponent({
 
                 downloadLinks.push({
                   url: format.freeTubeUrl,
-                  label: label
+                  label: label,
+                  formatId: format.itag || format.quality_label || format.bitrate,
+                  hasAudio: format.has_audio,
+                  hasVideo: format.has_video,
+                  mimeType: format.mime_type
                 })
               }
             }

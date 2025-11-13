@@ -263,8 +263,7 @@ Vue.component('FontAwesomeIcon', FontAwesomeIcon)
 Vue.component('FontAwesomeLayers', FontAwesomeLayers)
 Vue.directive('observe-visibility', ObserveVisibility)
 // NOWA REJESTRACJA
-Vue.component('custom-subtitle-settings', CustomSubtitleSettings)
-
+Vue.component('CustomSubtitleSettings', CustomSubtitleSettings)
 
 /* eslint-disable-next-line no-new */
 new Vue({

@@ -68,7 +68,7 @@
             @change="updateSetting('bgOpacity', $event)"
           />
         </div>
-        
+
         <!-- Vertical Position -->
         <!-- ZMIENIONY KOD -->
         <div class="control-group combined-control">

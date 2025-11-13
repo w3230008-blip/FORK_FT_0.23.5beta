@@ -42,7 +42,7 @@
       :buffered-time="bufferedTime"
       :chapters="chapters"
     />
-    
+
     <ft-floating-window
       v-if="showSubtitleSettings"
       :title="$t('Settings.Player Settings.Custom Subtitle Settings.Title')"

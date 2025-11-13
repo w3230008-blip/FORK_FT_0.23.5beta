@@ -50,6 +50,8 @@ const IpcChannels = {
   GENERATE_PO_TOKENS: 'generate-po-tokens',
 
   WRITE_SCREENSHOT: 'write-screenshot',
+
+  DOWNLOAD_VIDEO_WITH_YTDLP: 'download-video-with-ytdlp',
 }
 
 const DBActions = {

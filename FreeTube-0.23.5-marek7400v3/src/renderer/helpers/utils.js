@@ -499,7 +499,7 @@ export function formatDurationAsTimestamp(lengthSeconds) {
     minutes = '0' + minutes
   }
 
-  //let seconds = lengthSeconds - minutes * 60
+  // let seconds = lengthSeconds - minutes * 60
   let seconds = Math.floor(lengthSeconds - minutes * 60)
   if (seconds < 10) {
     seconds = '0' + seconds

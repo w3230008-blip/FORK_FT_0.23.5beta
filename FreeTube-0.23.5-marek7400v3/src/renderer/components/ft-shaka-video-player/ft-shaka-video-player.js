@@ -33,7 +33,6 @@ import FtCustomSubtitleSettings from '../CustomSubtitleSettings/CustomSubtitleSe
 import FtCustomSubtitleDisplay from '../FtCustomSubtitleDisplay/FtCustomSubtitleDisplay.vue'
 import FtFloatingWindow from '../FtFloatingWindow/FtFloatingWindow.vue'
 
-
 /** @typedef {import('../../helpers/sponsorblock').SponsorBlockCategory} SponsorBlockCategory */
 
 const HTTP_IN_HEX = 0x68747470
@@ -231,9 +230,9 @@ export default defineComponent({
       }
     })
 
-    const customSubtitlesEnabledFromStore = computed(() => store.getters.getCustomSubtitleEnabled);
+    const customSubtitlesEnabledFromStore = computed(() => store.getters.getCustomSubtitleEnabled)
 
-    const showAdjustedTime = computed(() => store.getters.getShowAdjustedTime);
+    const showAdjustedTime = computed(() => store.getters.getShowAdjustedTime)
     const autoplayVideos = computed(() => store.getters.getAutoplayVideos)
     const displayVideoPlayButton = computed(() => store.getters.getDisplayVideoPlayButton)
     watch(displayVideoPlayButton, (newValue) => ui.configure({ addBigPlayButton: newValue }))
@@ -506,72 +505,71 @@ export default defineComponent({
      */
     function convertSrtToVtt(srt) {
       // Zamiana przecinków na kropki w znacznikach czasu
-      let vtt = srt.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+      let vtt = srt.replaceAll(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
       // Dodanie nagłówka WEBVTT
-      vtt = "WEBVTT\n\n" + vtt;
+      vtt = 'WEBVTT\n\n' + vtt
       // Usunięcie numeracji linii
-      vtt = vtt.replace(/^\d+\s*$/gm, '');
+      vtt = vtt.replaceAll(/^\d+\s*$/gm, '')
       // Poprawienie pustych linii, aby były co najmniej dwie między wpisami
-      vtt = vtt.replace(/\n\n+/g, '\n\n');
-      return vtt;
+      vtt = vtt.replaceAll(/\n\n+/g, '\n\n')
+      return vtt
     }
-    
+
     function parseVttCues(vttContent) {
-      const cueBlocks = vttContent.split('\n\n').slice(1);
+      const cueBlocks = vttContent.split('\n\n').slice(1)
       const toSeconds = (timeStr) => {
-        const parts = timeStr.split(':').map(part => parseFloat(part.replace(',', '.')));
-        let seconds = 0;
+        const parts = timeStr.split(':').map(part => parseFloat(part.replace(',', '.')))
+        let seconds = 0
         if (parts.length === 3) {
-          seconds += parts[0] * 3600;
-          seconds += parts[1] * 60;
-          seconds += parts[2];
+          seconds += parts[0] * 3600
+          seconds += parts[1] * 60
+          seconds += parts[2]
         } else {
-          seconds += parts[0] * 60;
-          seconds += parts[1];
+          seconds += parts[0] * 60
+          seconds += parts[1]
         }
-        return seconds;
-      };
+        return seconds
+      }
 
       return cueBlocks.map(block => {
-        const lines = block.split('\n');
-        if (lines.length < 2) return null;
-        const timeMatch = lines[0].match(/(\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})/);
-        if (!timeMatch) return null;
+        const lines = block.split('\n')
+        if (lines.length < 2) return null
+        const timeMatch = lines[0].match(/(\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})/)
+        if (!timeMatch) return null
 
-        const text = lines.slice(1).join(' ').replace(/(\r\n|\n|\r)/gm, ' ');
+        const text = lines.slice(1).join(' ').replaceAll(/(\r\n|\n|\r)/gm, ' ')
         return {
           startTime: toSeconds(timeMatch[1]),
           endTime: toSeconds(timeMatch[2]),
           text: text,
-        };
-      }).filter(cue => cue !== null);
+        }
+      }).filter(cue => cue !== null)
     }
 
     async function uploadSubtitles() {
       try {
-        const file = await readFileWithPicker('Subtitle File', { 'text/vtt': ['.vtt'], 'application/x-subrip': ['.srt'] }, 'subtitle-upload');
-        if (file === null) return;
-        
-        let content = file.content;
-        const fileExtension = file.filename.split('.').pop().toLowerCase();
+        const file = await readFileWithPicker('Subtitle File', { 'text/vtt': ['.vtt'], 'application/x-subrip': ['.srt'] }, 'subtitle-upload')
+        if (file === null) return
+
+        let content = file.content
+        const fileExtension = file.filename.split('.').pop().toLowerCase()
 
         if (fileExtension === 'srt') {
-          content = convertSrtToVtt(content);
+          content = convertSrtToVtt(content)
         }
-        
-        customCues.value = parseVttCues(content);
-        showToast(t('Video.Player.Subtitles loaded successfully'));
+
+        customCues.value = parseVttCues(content)
+        showToast(t('Video.Player.Subtitles loaded successfully'))
 
         // Wyłączenie natywnych napisów Shaka, jeśli jakieś są aktywne
         if (player.isTextTrackVisible()) {
-          await player.setTextTrackVisibility(false);
+          await player.setTextTrackVisibility(false)
         }
       } catch (err) {
-        console.error('Error loading subtitles:', err);
-        showToast(t('Video.Player.Error loading subtitles', { error: err.message }));
+        console.error('Error loading subtitles:', err)
+        showToast(t('Video.Player.Error loading subtitles', { error: err.message }))
       }
     }
-
 
     function addUICustomizations() {
       const controlsContainer = ui.getControls().getControlsContainer()
@@ -605,7 +603,7 @@ export default defineComponent({
         createSponsorBlockMarkers(duration)
       }
     }
-    
+
     function registerAudioTrackSelection() {
       class AudioTrackSelectionFactory {
         create(rootElement, controls) {
@@ -761,7 +759,7 @@ export default defineComponent({
 
     let resizeObserver = null
     function resized(entries) { useOverFlowMenu.value = entries[0].contentBoxSize[0].inlineSize <= USE_OVERFLOW_MENU_WIDTH_THRESHOLD }
-    
+
     const loadedLocales = new Set(process.env.SHAKA_LOCALES_PREBUNDLED)
     async function setLocale(locale) {
       const shakaLocale = LOCALE_MAPPINGS.get(locale) ?? 'en'
@@ -784,7 +782,7 @@ export default defineComponent({
       events.dispatchEvent(new CustomEvent('localeChanged'))
     }
     watch(locale, setLocale)
-    watch(showAdjustedTime, updateAdjustedTimeDisplay);
+    watch(showAdjustedTime, updateAdjustedTimeDisplay)
 
     let powerSaveBlocker = null
     async function startPowerSaveBlocker() {
@@ -800,7 +798,7 @@ export default defineComponent({
         powerSaveBlocker = null
       }
     }
-    
+
     function handlePlay() {
       startPowerSaveBlocker()
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
@@ -838,17 +836,17 @@ export default defineComponent({
     }
     function onTextChanged() {
       if (customCues.value.length === 0 && player) {
-          const textTracks = player.getTextTracks();
-          const activeTrack = textTracks.find(track => track.active);
-          if (activeTrack && player.isTextTrackVisible()) {
-              const activeCue = activeTrack.cues ? activeTrack.cues.find(cue => cue.isDisplayed) : null;
-              currentCustomSubtitleText.value = activeCue ? activeCue.text.replace(/(\r\n|\n|\r)/gm, ' ') : '';
-          } else {
-              currentCustomSubtitleText.value = '';
-          }
+        const textTracks = player.getTextTracks()
+        const activeTrack = textTracks.find(track => track.active)
+        if (activeTrack && player.isTextTrackVisible()) {
+          const activeCue = activeTrack.cues ? activeTrack.cues.find(cue => cue.isDisplayed) : null
+          currentCustomSubtitleText.value = activeCue ? activeCue.text.replaceAll(/(\r\n|\n|\r)/gm, ' ') : ''
+        } else {
+          currentCustomSubtitleText.value = ''
+        }
       }
     }
-    
+
     function handleTimeupdate() {
       const video_ = video.value
       const videoCurrentTime = video_.currentTime
@@ -861,58 +859,58 @@ export default defineComponent({
       if (useSponsorBlock.value && sponsorBlockSegments.length > 0 && canSeek()) skipSponsorBlockSegments(videoCurrentTime)
 
       if (customCues.value.length > 0) {
-        const activeCue = customCues.value.find(cue => videoCurrentTime >= cue.startTime && videoCurrentTime <= cue.endTime);
-        currentCustomSubtitleText.value = activeCue ? activeCue.text : '';
+        const activeCue = customCues.value.find(cue => videoCurrentTime >= cue.startTime && videoCurrentTime <= cue.endTime)
+        currentCustomSubtitleText.value = activeCue ? activeCue.text : ''
       }
       updateAdjustedTimeDisplay()
     }
-    
+
     function updateAdjustedTimeDisplay() {
-      let adjustedElement = container.value?.querySelector('#adjusted-duration-display');
-  
+      let adjustedElement = container.value?.querySelector('#adjusted-duration-display')
+
       if (!showAdjustedTime.value) {
         if (adjustedElement) {
-          adjustedElement.remove();
+          adjustedElement.remove()
         }
-        return;
+        return
       }
-  
+
       // If element is not in DOM, but it should be, create and append it
       if (!adjustedElement) {
-        const timeContainer = container.value?.querySelector('.shaka-current-time');
+        const timeContainer = container.value?.querySelector('.shaka-current-time')
         if (!timeContainer) {
-          return; // Can't do anything if parent element isn't ready
+          return // Can't do anything if parent element isn't ready
         }
-        adjustedElement = document.createElement('span');
-        adjustedElement.id = 'adjusted-duration-display';
-        adjustedElement.style.marginLeft = '8px';
-        adjustedElement.style.color = '#ffeb3b';
-        adjustedElement.style.fontSize = getComputedStyle(timeContainer).fontSize;
-        adjustedElement.style.alignSelf = 'center';
-  
+        adjustedElement = document.createElement('span')
+        adjustedElement.id = 'adjusted-duration-display'
+        adjustedElement.style.marginLeft = '8px'
+        adjustedElement.style.color = '#ffeb3b'
+        adjustedElement.style.fontSize = getComputedStyle(timeContainer).fontSize
+        adjustedElement.style.alignSelf = 'center'
+
         // Insert after the time container
-        timeContainer.parentNode.insertBefore(adjustedElement, timeContainer.nextSibling);
+        timeContainer.parentNode.insertBefore(adjustedElement, timeContainer.nextSibling)
       }
-  
-      const playbackRate = video.value?.playbackRate;
-      const originalDuration = video.value?.duration;
-  
+
+      const playbackRate = video.value?.playbackRate
+      const originalDuration = video.value?.duration
+
       if (!playbackRate || playbackRate === 1 || !isFinite(originalDuration) || originalDuration <= 0) {
-        adjustedElement.textContent = '';
-        return;
+        adjustedElement.textContent = ''
+        return
       }
-      
-      const adjustedTotalDuration = originalDuration / playbackRate;
-      const formattedAdjustedTotal = formatDurationAsTimestamp(adjustedTotalDuration);
-      
-      const currentTimeValue = video.value.currentTime;
-      const adjustedCurrentTime = currentTimeValue / playbackRate;
-      const formattedAdjustedCurrent = formatDurationAsTimestamp(adjustedCurrentTime);
-      
-      const textToShow = `(${formattedAdjustedCurrent} / ${formattedAdjustedTotal} @${playbackRate}x)`;
-  
+
+      const adjustedTotalDuration = originalDuration / playbackRate
+      const formattedAdjustedTotal = formatDurationAsTimestamp(adjustedTotalDuration)
+
+      const currentTimeValue = video.value.currentTime
+      const adjustedCurrentTime = currentTimeValue / playbackRate
+      const formattedAdjustedCurrent = formatDurationAsTimestamp(adjustedCurrentTime)
+
+      const textToShow = `(${formattedAdjustedCurrent} / ${formattedAdjustedTotal} @${playbackRate}x)`
+
       if (adjustedElement.textContent !== textToShow) {
-          adjustedElement.textContent = textToShow;
+        adjustedElement.textContent = textToShow
       }
     }
 
@@ -1402,11 +1400,11 @@ export default defineComponent({
           break
         case 'x':
           if (customCues.value.length > 0) {
-            event.preventDefault();
-            store.dispatch('updateCustomSubtitleEnabled', !customSubtitlesEnabledFromStore.value);
-            showToast(customSubtitlesEnabledFromStore.value ? t('Video.Player.Subtitles enabled') : t('Video.Player.Subtitles disabled'));
+            event.preventDefault()
+            store.dispatch('updateCustomSubtitleEnabled', !customSubtitlesEnabledFromStore.value)
+            showToast(customSubtitlesEnabledFromStore.value ? t('Video.Player.Subtitles enabled') : t('Video.Player.Subtitles disabled'))
           }
-          break;
+          break
         case KeyboardShortcuts.VIDEO_PLAYER.GENERAL.VOLUME_UP:
           event.preventDefault()
           changeVolume(0.05)
@@ -1545,8 +1543,8 @@ export default defineComponent({
     const showOfflineMessage = computed(() => isOffline.value && isBuffering.value)
 
     const handleFullscreenChange = () => {
-      isPlayerFullscreen.value = !!document.fullscreenElement;
-    };
+      isPlayerFullscreen.value = !!document.fullscreenElement
+    }
 
     onMounted(async () => {
       const videoElement = video.value
@@ -1562,7 +1560,7 @@ export default defineComponent({
       player.addEventListener('texttrackvisibility', onTextChanged)
       player.addEventListener('textchanged', onTextChanged)
       const controls = ui.getControls()
-      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('fullscreenchange', handleFullscreenChange)
       controls.addEventListener('mouseenter', () => { isControlsHovering.value = true })
       controls.addEventListener('mouseleave', () => { isControlsHovering.value = false })
       await localPlayer.attach(videoElement)
@@ -1616,8 +1614,8 @@ export default defineComponent({
       container.value.classList.add('no-cursor')
       await performFirstLoad()
       player.addEventListener('ratechange', () => {
-        emit('playback-rate-updated', player.getPlaybackRate());
-        updateAdjustedTimeDisplay();
+        emit('playback-rate-updated', player.getPlaybackRate())
+        updateAdjustedTimeDisplay()
       })
     })
     async function performFirstLoad() {
@@ -1785,7 +1783,7 @@ export default defineComponent({
         player.removeEventListener('texttrackvisibility', onTextChanged)
         player.removeEventListener('textchanged', onTextChanged)
       }
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
       cleanUpCustomPlayerControls()
       stopPowerSaveBlocker()
       window.removeEventListener('beforeunload', stopPowerSaveBlocker)
@@ -1796,9 +1794,9 @@ export default defineComponent({
       window.removeEventListener('online', onlineHandler)
       window.removeEventListener('offline', offlineHandler)
 
-      const adjustedElement = container.value?.querySelector('#adjusted-duration-display');
+      const adjustedElement = container.value?.querySelector('#adjusted-duration-display')
       if (adjustedElement) {
-        adjustedElement.remove();
+        adjustedElement.remove()
       }
     })
     function isPaused() { return video.value.paused }
@@ -1842,11 +1840,29 @@ export default defineComponent({
     }
 
     return {
-      container, video, vrCanvas, currentTime, duration, bufferedTime, fullWindowEnabled,
-      forceAspectRatio, showStats, stats, autoplayVideos, sponsorBlockShowSkippedToast,
-      skippedSponsorBlockSegments, showOfflineMessage, handlePlay, handlePause,
-      handleCanPlay, handleEnded, updateVolume, handleTimeupdate,
-      valueChangeMessage, valueChangeIcon, showValueChangePopup,
+      container,
+      video,
+      vrCanvas,
+      currentTime,
+      duration,
+      bufferedTime,
+      fullWindowEnabled,
+      forceAspectRatio,
+      showStats,
+      stats,
+      autoplayVideos,
+      sponsorBlockShowSkippedToast,
+      skippedSponsorBlockSegments,
+      showOfflineMessage,
+      handlePlay,
+      handlePause,
+      handleCanPlay,
+      handleEnded,
+      updateVolume,
+      handleTimeupdate,
+      valueChangeMessage,
+      valueChangeIcon,
+      showValueChangePopup,
       showSubtitleSettings,
       currentCustomSubtitleText,
       isControlsHovering,
