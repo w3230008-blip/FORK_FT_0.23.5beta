@@ -75,29 +75,29 @@ export default defineComponent({
       backgroundColor: `${unbufferedColor.value}${toHex(unbufferedOpacity.value)}`,
       zIndex: zIndex.value
     }))
-    
+
     const chapterMarkersContainerStyle = computed(() => ({
-        height: `${barHeight.value}px`,
-        zIndex: zIndex.value + 3
+      height: `${barHeight.value}px`,
+      zIndex: zIndex.value + 3
     }))
 
     const chapterMarkers = computed(() => {
-        if (!chaptersEnabled.value || !props.chapters || props.chapters.length === 0 || props.duration === 0) {
-            return []
-        }
+      if (!chaptersEnabled.value || !props.chapters || props.chapters.length === 0 || props.duration === 0) {
+        return []
+      }
 
-        return props.chapters
-            .map(chapter => {
-                const percent = (chapter.startSeconds / props.duration) * 100
-                if (isNaN(percent) || percent <= 0 || percent >= 100) {
-                    return null
-                }
-                return {
-                    left: `${percent}%`,
-                    color: chapterMarkerColor.value
-                }
-            })
-            .filter(marker => marker !== null)
+      return props.chapters
+        .map(chapter => {
+          const percent = (chapter.startSeconds / props.duration) * 100
+          if (isNaN(percent) || percent <= 0 || percent >= 100) {
+            return null
+          }
+          return {
+            left: `${percent}%`,
+            color: chapterMarkerColor.value
+          }
+        })
+        .filter(marker => marker !== null)
     })
 
     return {

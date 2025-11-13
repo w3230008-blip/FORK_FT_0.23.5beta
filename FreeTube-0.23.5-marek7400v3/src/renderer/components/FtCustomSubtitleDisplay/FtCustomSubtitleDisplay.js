@@ -53,7 +53,7 @@ export default defineComponent({
         backgroundColor: hexToRgba(settings.bgColor, settings.bgOpacity)
       }
     })
-    
+
     return {
       enabled,
       containerStyle,

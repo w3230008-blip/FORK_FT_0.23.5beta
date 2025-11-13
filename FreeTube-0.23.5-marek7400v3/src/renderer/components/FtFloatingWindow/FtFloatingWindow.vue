@@ -1,5 +1,8 @@
 <template>
-  <div v-if="visible" class="floating-window-overlay">
+  <div
+    v-if="visible"
+    class="floating-window-overlay"
+  >
     <div
       ref="window"
       class="floating-window"
@@ -9,7 +12,9 @@
         class="window-header"
         @mousedown="startDrag"
       >
-        <h2 class="window-title">{{ title }}</h2>
+        <h2 class="window-title">
+          {{ title }}
+        </h2>
         <ft-icon-button
           :title="$t('Close')"
           :icon="['fas', 'xmark']"
@@ -26,7 +31,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import FtIconButton from '../ft-icon-button/ft-icon-button.vue';
+import FtIconButton from '../ft-icon-button/ft-icon-button.vue'
 
 const props = defineProps({
   title: String,
@@ -52,9 +57,9 @@ const initialTop = ref(0)
 
 const centerWindow = () => {
   if (props.parentRef && window.value) {
-    const parentRect = props.parentRef.getBoundingClientRect();
-    const windowRect = window.value.getBoundingClientRect();
-    
+    const parentRect = props.parentRef.getBoundingClientRect()
+    const windowRect = window.value.getBoundingClientRect()
+
     // Ustawiamy pozycję względem rodzica (odtwarzacza)
     top.value = (parentRect.height - windowRect.height) / 2
     left.value = (parentRect.width - windowRect.width) / 2
@@ -63,46 +68,46 @@ const centerWindow = () => {
 
 watch(() => props.visible, (newVal) => {
   if (newVal) {
-    centerWindow();
+    centerWindow()
   }
 })
 
 const startDrag = (event) => {
-  event.preventDefault();
-  isDragging.value = true;
-  dragStartX.value = event.clientX;
-  dragStartY.value = event.clientY;
-  initialLeft.value = left.value;
-  initialTop.value = top.value;
+  event.preventDefault()
+  isDragging.value = true
+  dragStartX.value = event.clientX
+  dragStartY.value = event.clientY
+  initialLeft.value = left.value
+  initialTop.value = top.value
 
-  document.addEventListener('mousemove', onDrag);
-  document.addEventListener('mouseup', stopDrag);
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', stopDrag)
 }
 
 const onDrag = (event) => {
   if (isDragging.value) {
-    const dx = event.clientX - dragStartX.value;
-    const dy = event.clientY - dragStartY.value;
-    left.value = initialLeft.value + dx;
-    top.value = initialTop.value + dy;
+    const dx = event.clientX - dragStartX.value
+    const dy = event.clientY - dragStartY.value
+    left.value = initialLeft.value + dx
+    top.value = initialTop.value + dy
   }
 }
 
 const stopDrag = () => {
-  isDragging.value = false;
-  document.removeEventListener('mousemove', onDrag);
-  document.removeEventListener('mouseup', stopDrag);
+  isDragging.value = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
 }
 
 onMounted(() => {
   if (props.visible) {
-    centerWindow();
+    centerWindow()
   }
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener('mousemove', onDrag);
-  document.removeEventListener('mouseup', stopDrag);
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
 })
 
 </script>

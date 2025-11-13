@@ -200,6 +200,124 @@ const actions = {
     commit('setOutlinesHidden', true)
   },
 
+  async downloadMediaWithYtdlp({ rootState }, { url, title, extension, formatId, isAudioVideo = false }) {
+    if (!process.env.IS_ELECTRON) {
+      openExternalLink(url)
+      return
+    }
+
+    const { ipcRenderer } = require('electron')
+    const fileName = `${replaceFilenameForbiddenChars(title)}.${extension}`
+    const errorMessage = i18n.t('Downloading failed', { videoTitle: title })
+    const askFolderPath = rootState.settings.downloadAskPath
+    let folderPath = rootState.settings.downloadFolderPath
+
+    if (askFolderPath) {
+      const options = {
+        defaultPath: fileName,
+        filters: [
+          {
+            name: extension.toUpperCase(),
+            extensions: [extension]
+          }
+        ]
+      }
+      const response = await showSaveDialog(options)
+
+      if (response.canceled || response.filePath === '') {
+        // User canceled the save dialog
+        return
+      }
+
+      folderPath = response.filePath
+    } else {
+      if (!(await pathExists(folderPath))) {
+        try {
+          await fs.mkdir(folderPath, { recursive: true })
+        } catch (err) {
+          console.error(err)
+          showToast(err)
+          return
+        }
+      }
+      folderPath = path.join(folderPath, fileName)
+    }
+
+    showToast(i18n.t('Starting download', { videoTitle: title }))
+
+    // Set up progress listener
+    const progressListener = (_, { progress }) => {
+      if (progress >= 0 && progress <= 100) {
+        showToast(`${i18n.t('Downloading')} ${Math.round(progress)}%`, 2000)
+      }
+    }
+
+    ipcRenderer.on('download-progress', progressListener)
+
+    try {
+      const result = await ipcRenderer.invoke(IpcChannels.DOWNLOAD_VIDEO_WITH_YTDLP, {
+        url,
+        title,
+        outputPath: folderPath,
+        formatId
+      })
+
+      if (result.success) {
+        showToast(i18n.t('Downloading has completed', { videoTitle: title }))
+      }
+    } catch (error) {
+      console.error(error)
+      // If yt-dlp is not available, fallback to regular download
+      if (error.message && error.message.includes('yt-dlp is not installed')) {
+        showToast('yt-dlp not found, falling back to regular download', 5000)
+
+        // Fallback to regular fetch-based download
+        const response = await fetch(url).catch((fetchError) => {
+          console.error(fetchError)
+          showToast(errorMessage)
+          return null
+        })
+
+        if (response) {
+          const reader = response.body.getReader()
+          const chunks = []
+
+          const handleError = (err) => {
+            console.error(err)
+            showToast(errorMessage)
+          }
+
+          const processText = async ({ done, value }) => {
+            if (done) {
+              return
+            }
+
+            chunks.push(value)
+            await reader.read().then(processText).catch(handleError)
+          }
+
+          await reader.read().then(processText).catch(handleError)
+
+          const blobFile = new Blob(chunks)
+          const buffer = await blobFile.arrayBuffer()
+
+          try {
+            await fs.writeFile(folderPath, new DataView(buffer))
+            showToast(i18n.t('Downloading has completed', { videoTitle: title }))
+          } catch (err) {
+            console.error(err)
+            showToast(errorMessage)
+          }
+        }
+      } else {
+        showToast(errorMessage)
+      }
+    } finally {
+      // Clean up progress listener
+      ipcRenderer.removeListener('download-progress', progressListener)
+    }
+  },
+
   async downloadMedia({ rootState }, { url, title, extension }) {
     if (!process.env.IS_ELECTRON) {
       openExternalLink(url)

@@ -83,12 +83,12 @@ export default defineComponent({
       'updateCustomSubtitleFullscreenContainerWidth',
     ]),
     updateSetting(key, value) {
-      const modeCapitalized = this.currentMode.charAt(0).toUpperCase() + this.currentMode.slice(1);
-      const keyCapitalized = key.charAt(0).toUpperCase() + key.slice(1);
-      const actionName = `updateCustomSubtitle${modeCapitalized}${keyCapitalized}`;
-      
+      const modeCapitalized = this.currentMode.charAt(0).toUpperCase() + this.currentMode.slice(1)
+      const keyCapitalized = key.charAt(0).toUpperCase() + key.slice(1)
+      const actionName = `updateCustomSubtitle${modeCapitalized}${keyCapitalized}`
+
       if (this[actionName]) {
-        this[actionName](value);
+        this[actionName](value)
       }
     },
   }

@@ -321,11 +321,31 @@ export default defineComponent({
       const selectedDownloadLinkOption = this.downloadLinkOptions[index]
       const url = selectedDownloadLinkOption.value
       const linkName = selectedDownloadLinkOption.label
-      const extension = this.grabExtensionFromUrl(linkName)
+
+      // Find the original download link with format information
+      const originalDownloadLink = this.downloadLinks[index]
+      const formatId = originalDownloadLink?.formatId
+      const hasAudio = originalDownloadLink?.hasAudio
+      const hasVideo = originalDownloadLink?.hasVideo
+      const mimeType = originalDownloadLink?.mimeType
+
+      // Determine if this is an audio+video format that needs yt-dlp
+      const isAudioVideoFormat = hasAudio && hasVideo && mimeType && mimeType.startsWith('video/')
+      const extension = this.grabExtensionFromUrl(linkName) || 'mp4'
 
       if (this.downloadBehavior === 'open') {
         openExternalLink(url)
+      } else if (isAudioVideoFormat && process.env.IS_ELECTRON) {
+        // Use yt-dlp for audio+video formats to prevent UI freeze
+        this.downloadMediaWithYtdlp({
+          url: url,
+          title: this.title,
+          extension: extension,
+          formatId: formatId,
+          isAudioVideo: true
+        })
       } else {
+        // Use regular fetch for audio-only, video-only, or non-electron environments
         this.downloadMedia({
           url: url,
           title: this.title,
@@ -412,6 +432,7 @@ export default defineComponent({
     ...mapActions([
       'openInExternalPlayer',
       'downloadMedia',
+      'downloadMediaWithYtdlp',
       'showAddToPlaylistPromptForManyVideos',
       'addVideo',
       'updatePlaylist',
